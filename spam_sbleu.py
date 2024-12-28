@@ -1,121 +1,73 @@
 import random
 import requests
 import argparse
+import threading
+import time
 
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('n', metavar='N', type=int, help='an integer for the number of iterations', default=100)
-
+parser = argparse.ArgumentParser(description='Spam a Google Form with requests.')
+parser.add_argument('n', metavar='N', type=int, help='Number of iterations', default=100)
+parser.add_argument('--threads', metavar='T', type=int, help='Number of threads', default=5)
 args = parser.parse_args()
 
-#url = "https://docs.google.com/forms/u/0/d/e/1FAIpQLSdwcwvrOeBG200L0tCSUHc1MLebycACWIi3qw0UBK31GE26Yg/formResponse"
-#url = "https://docs.google.com/forms/d/e/1FAIpQLSc9o79d3nQIkFj0n3cE22ocRgKdMNdczHOaHsE9g50bzXMjJA/formResponse" 
-
-url = "https://docs.google.com/forms/d/e/1FAIpQLSfWm5CkbKknD93xJ230mViaBBXkDLYfEX8tfRxBwLx-WiAiyA/formResponse"
+url = "https://docs.google.com/forms/d/e/1FAIpQLSeFyryN0f641ieHqtf9Qa5mAS_7xzfyEAZ6Y1UhR8u0T4vTog/formResponse"
 
 posts = ["15n", "quinzaine", "bar", "rachat", "vieux", "sympath", "BAAAR", "Prési", "Clash", "Annim bar", "FLTR", "AGRO", "vieux con", "Je suis puceau", "zigouille", "C au cube", "hackerman", "web", "sympath", "vieux", "sterput"]
 sizes = ["S", "M", "L", "XL"]
 
-real_names = [["Agathe Henry", "Pompelup"],
-              ["François Caussin", "Saucisse"],
-              ["Xavier Sanchez-Rivas","Uno"],
-              ["Lucie Tournay","Kokosnoot"],
-              ["Oscar Misson", "Woluwe"],
-              ["Charlotte Morelle","Brooklyn99"],
-              ["Clarisse Gatot","Otto"],
-              ["Antoine Eck","Loci"],
-              ["Maxence Dronneau","Nageoire Avant"],
-              ["Alexandre Sanchez","Tranquilou Debout"],
-              ["Baptiste Leblanc","Supreme Cheese"],
-              ["Romain Bongiovanni","Lonely"],
-              ["Henri Pihet","Camartichau"],
-              ["Alicia De Hert","Germaine"],
-              ["Neira Hotilovac","Random"],
-              ["Sascha Kurochkin","Viggo"],
-              ["Florian Boon Georges","Lemetre"],
-              ["Zoé Vanboucq","Céréli-thé"],
-              ["Alvaro Farcy","Reinπ"],
-              ["Emilie Strimelle","Whisky"],
-              ["Isaline De Saffel","Djaccuz" ],
-              ["Elsa Biver","Panos"],
-              ["Hugo Wouters","2Blues"],
-              ["Matteo Deléhouzée","Marylin Manson"],
-              ["Louis Van de Laer","Platane"],
-              ["Déborah Gemberling","Flash"],
-              ["Carole Vinesse","Failaiback"],
-              ["Louis Verhelst","Répépète"],
-              ["Tatiana Baccus","Bacc14"],
-              ["Tess Cluysen","Rouky"],
-              ["Audrey Bousquet-Hourat","Tag"],
-              ["Joshua Nerenhausen","Rhésus"],
-              ["James Ping","Latence"],
-              ["Guillaume Garsoux","Perdu"],
-              ["Violette Renier","Juke-Box"],
-              ["Vadim Auslender","Magicarpe"],
-              ["Elise Dejean","Shisha"],
-              ["Samantha Revercez","Clover"],
-              ["Anna Priem","Fifloflette"],
-              ["Henri Pihet","Camartichau"],
-              ["Déborah Gemberling","Flash"]
-              ]
-
-adjectives = open('french-word-list-adjectives.csv', 'r', encoding='ISO-8859-1')
-adjectives = adjectives.readlines()
-
-nouns = open('french-word-list-nouns.csv', 'r', encoding='ISO-8859-1')
-nouns = nouns.readlines()
+# Load names from file
+with open('first-names.txt', 'r') as file:
+    names = [line.strip() for line in file.readlines()]
 
 def fill_form(name, nickname, post, size):
-    #name = "henri"
-    #nickname = "camart"
-    #post = "hacker"
-    #size = "XL"
-
-    value = {
-        #"entry.1138287767": name,
-        #"entry.1580613741": "Option 3",
-        #"entry.1580613741_sentinel":" ",
+    """Prepares the form data."""
+    return {
         "entry.868042368": name,
         "entry.569405921": nickname,
-        "entry.146262275": post ,
+        "entry.146262275": post,
         "entry.874958648": size,
-        "entry.874958648_sentinel":" ",
+        "entry.874958648_sentinel": " ",
     }
-    print(value, flush = True)
-    return value
 
 def submit(url, data):
+    """Submits the form data."""
     try:
-        res = requests.post(url, data = data)
-        if res.status_code != 200:
-            # TODO: show error message
-            raise Exception("Error! Can't submit form", res.status_code)
-        return True
+        res = requests.post(url, data=data)
+        if res.status_code == 200:
+            print(f"Submitted successfully: {data}")
+            return True
+        else:
+            print(f"Failed with status: {res.status_code}")
+            return False
     except Exception as e:
-        print("Error!", e)
+        print(f"Error during submission: {e}")
         return False
 
+def spam_form(iterations):
+    """Handles the spamming process."""
+    for _ in range(iterations):
+        name = random.choice(names)
+        nickname = random.choice(names)
+        post = random.choice(posts)
+        size = random.choice(sizes)
+        form_data = fill_form(name, nickname, post, size)
+        submit(url, form_data)
+        time.sleep(random.uniform(1, 3))  # Random delay to avoid rate-limiting
 
-    
+def start_spam(threads, iterations):
+    """Runs the spamming process with multiple threads."""
+    thread_list = []
+    per_thread = iterations // threads
+
+    for _ in range(threads):
+        thread = threading.Thread(target=spam_form, args=(per_thread,))
+        thread_list.append(thread)
+        thread.start()
+
+    for thread in thread_list:
+        thread.join()
+
 if __name__ == "__main__":
-    print("Running script...", flush = True)
-    with open('first-names.txt', 'r') as file:
-        lines = file.readlines()
-        for _ in range(args.n):
-            adjective_line = random.randint(0, 199)
-            noun_line = random.randint(0, 199)
-            real_name_int = random.randint(0, 40)
-
-            adj = adjectives[adjective_line].split(';')[1]
-            noun = nouns[noun_line].split(';')[1]
-
-            real_name = real_names[real_name_int][0]
-            real_surname = real_names[real_name_int][1]
-            post = "".join([noun," ", adj])
-            print("Prénom: ", real_name)
-            print(post)
-            
-            #post = random.choice(posts)
-            size = random.choice(sizes)
-            #name = random.choice(lines).strip()
-            #nickname = random.choice(lines).strip()
-            submit(url, fill_form(real_name, real_surname, post, size)) 
+    print("Starting the spamming process...")
+    total_iterations = args.n
+    num_threads = args.threads
+    start_spam(num_threads, total_iterations)
