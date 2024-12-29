@@ -8,12 +8,10 @@ parser = argparse.ArgumentParser(
     description='Spam a Google Form with requests.')
 parser.add_argument('n', metavar='N', type=int,
                     help='Number of iterations', default=100)
-parser.add_argument('--threads', metavar='T', type=int,
-                    help='Number of threads', default=5)
 args = parser.parse_args()
 
 url = "https://docs.google.com/forms/u/0/d/e/1FAIpQLSeFyryN0f641ieHqtf9Qa5mAS_7xzfyEAZ6Y1UhR8u0T4vTog/formResponse"
-#url = "https://docs.google.com/forms/d/e/1FAIpQLSdV9Ez-bog289UVeebvDElEXfa6VfGsXlITgYEWSLgSuTK-Ig/formResponse"
+#url = "https://docs.google.com/forms/d/e/1FAIpQLSdV9Ez-bog289UVeebvDElEXfa6VfGsXlITgYEWSLgSuTK-Ig/formResponse" # Test form
 
 posts = ["15n", "quinzaine", "bar", "rachat", "vieux", "sympath", "BAAAR", "Prési", "Clash", "Annim bar", "FLTR", "AGRO", "vieux con", "Je suis puceau",
          "zigouille", "C au cube", "hackerman", "web", "sympath", "vieux", "sterput", "CI", "Spix", "meme", "cenat", "Cyclofette", "BaR", "BDE"]
@@ -41,9 +39,6 @@ def fill_form(name, nicknamePost, size, pay):
         "entry.1387090533": "OUI car je suis cool et détente 😎",
         "entry.720160850": size,
         "entry.1100260589": pay,
-        # "entry.1387090533_sentinel": " ",
-        # "entry.720160850_sentinel": " ",
-        # "entry.1100260589_sentinel": " "
     }
 
 
@@ -52,11 +47,10 @@ def submit(url, data):
     try:
         res = requests.post(url, data=data)
         if res.status_code == 200:
-            print(f"Submitted successfully: {data}")
+            print(f"\033[92mSubmitted successfully\033[0m: {data}")
             return True
         else:
-            print(
-                f"Failed with status: {res.status_code} and reason: {res.reason}, data: {data}")
+            print(f"\033[91mFailed with status\033[0m: {res.status_code} and reason: {res.reason}, data: {data}")
             return False
     except Exception as e:
         print(f"Error during submission: {e}")
@@ -95,24 +89,6 @@ def spam_form(iterations):
     print(f"Successfully submitted: {succes}")
     print(f"Failed to submit: {fail}")
 
-
-def start_spam(threads, iterations):
-    """Runs the spamming process with multiple threads."""
-    thread_list = []
-    per_thread = iterations // threads
-
-    for _ in range(threads):
-        thread = threading.Thread(target=spam_form, args=(per_thread,))
-        thread_list.append(thread)
-        thread.start()
-
-    for thread in thread_list:
-        thread.join()
-
-
 if __name__ == "__main__":
-    print("Starting the spamming process...")
-    # total_iterations = args.n
-    # num_threads = args.threads
-    # start_spam(num_threads, total_iterations)
+    print("Starting the spamming process...Yahouuuu Hack the world")
     spam_form(args.n)
